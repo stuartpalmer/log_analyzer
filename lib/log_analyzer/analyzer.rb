@@ -1,11 +1,12 @@
 module LogAnalyzer
-  
+
   class Analyzer
     DEFAULT_TABLE_WIDTH = 120 # width
     CONTENT_LENGTH      = (0..DEFAULT_TABLE_WIDTH - 20).freeze
     ROWS_FOR_FOOTER     = 10
     HEADER              = ['Type', 'View', 'Count', 'AVG (ms)', 'Max', 'Min'].freeze
-    MATCHER             = /Rendered (.*\/.*) \((.*)ms\)/.freeze
+    MATCHER_START       = /Started (\w+) "(.*)"/.freeze
+    MATCHER             = /Completed 200 OK in (\d+)ms/.freeze
 
     attr_reader :filename
     attr_reader :stats
@@ -16,13 +17,17 @@ module LogAnalyzer
     end
 
     def run
+      start = nil
       IO.foreach(filename).each do |line|
-        if line.scrub =~ MATCHER
-          if $1 && $2
-            view = $1
+        if line.scrub.match(MATCHER_START)
+          start = $2
+        elsif line.scrub.match(MATCHER)
+          if start && $1
+            view = start
             @stats[view] ||= Stat.new(type: Utils.find_type(view))
-            @stats[view].push($2)
+            @stats[view].push($1)
           end
+          start = nil
         end
       end
     rescue Errno::ENOENT

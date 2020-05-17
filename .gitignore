@@ -13,6 +13,7 @@
 /*.gem
 
 /.DS_Store
+/.ruby-gemset
 
 /doc/.DS_Store
 
